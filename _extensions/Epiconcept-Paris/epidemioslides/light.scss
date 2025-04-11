@@ -1,0 +1,131 @@
+/*-- scss:defaults --*/
+
+// Fonts
+$font-family-sans-serif: 'Marianne', sans-serif;
+
+// Colors
+$black: #000000;
+$white: #ffffff;
+
+$vert_nature: #002d2d;
+$vert_avenir: #32a68c;
+$vert_tendre: #89e0b1;
+$bleu_horizon: #000037;
+$bleu_inclusif: #5862ed;
+$bleu_evasion: #7abaff;
+$marron_durable: #2d0505;
+$rouge_action: #fc535c;
+$rose_accueillant: #ffb4d2;
+$beige_serein: #faf0e1;
+$gris_clair: #ededed;
+$epiconcept_bleu_fonce: #156184;
+$epiconcept_bleu_clair: #4BCDDB;
+$epiconcept_jaune: #FAC13F;
+$epiconcept_gris:#869ab8;
+
+$body-bg: $white !default;
+$link-color: $epiconcept_jaune !default;
+$body-color: $black !default;
+
+// Sizes
+$presentation-font-size-root: 20px;
+$presentation-h1-font-size: 3em;
+$presentation-h2-font-size: 2.5em;
+$presentation-h3-font-size: 1.75em;
+
+/*-- scss:rules --*/
+.reveal {
+
+  .center-items {
+    text-align: center;
+  }
+  
+  .v-center-content {
+    margin: 0;
+    position: absolute;
+    top: 50%;
+    -ms-transform: translateY(-50%);
+    transform: translateY(-50%);
+  }
+
+  .right-items {
+    text-align: right;
+  }
+  
+
+  h1, h2 {
+    color: $epiconcept_bleu_fonce !important;
+    font-weight: bold;
+  }
+
+  .slide-number {
+    color: $epiconcept_gris !important;
+    font-size: $presentation-font-size-root;
+    font-family: $presentation-heading-font;
+  }
+
+  #title-slide {
+    .flex-section {
+      display: flex !important;
+      align-items: center;
+      justify-content: flex-end;
+    }
+
+    .half-section {
+      width: 45%;
+    }
+  
+    .author {
+      color: $epiconcept_bleu_clair !important;
+      // text-align: start;
+    }
+  
+    .date {
+      color: $epiconcept_jaune !important;
+      // text-align: start;
+    }
+  
+    .title {
+      // text-align: start;
+    }
+  }
+
+  .slide-logo {
+    height: 5rem !important;
+    width: 5.7rem !important;
+    max-width: unset !important;
+    max-height: unset !important;
+  }
+
+  .footer {
+    color: $epiconcept_bleu_clair !important;
+  }
+
+  // code
+
+  div.sourceCode {
+    border: 2px solid $gris_clair !important;
+  }
+
+  pre.sourceCode code {
+    background-color: $beige_serein !important;
+    font-size: 1rem !important;
+  }
+  
+  code {
+    span.fu {
+      color: $rouge_action !important;
+    }
+
+    span.st {
+      color: $vert_avenir !important;
+    }
+  }
+
+  div.sourceCode pre code.has-line-highlights>span:not(.highlight-line) {
+    opacity: 0.25 !important;
+  }
+
+  
+
+}

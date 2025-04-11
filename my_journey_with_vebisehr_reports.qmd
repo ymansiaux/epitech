@@ -1,0 +1,941 @@
+---
+title: Epidemiology of "messy" code 
+subtitle: A review of non-pharmaceutical interventions to improve code quality and reproducibility in epidemiology
+format:
+  epidemioslides-revealjs: default
+author: Yohann Mansiaux
+date: last-modified
+---
+
+# Preambule
+
+## The Epidemiology of Code
+
+Just as we study the patterns, causes, and effects of health conditions in populations, we can examine the "health" of our code! 
+
+Today, I'll share my journey of identifying common patterns and implementing helpful practices - **recognizing that we're all doing our best with the resources and knowledge we have.**
+
+:::: {.columns}
+::: {.column width="40%"}
+![](external_img/attention_please.jpg)
+:::
+
+::: {.column width="50%"}
+<br />
+
+- **This presentation is not meant to be preachy or judgmental. It's about sharing experiences and learning from each other !**
+- **We all develop coding habits based on what we've learned and what gets the job done. There's no shame in how code evolves - we're scientists first, not software engineers!**
+
+- **Producing clean, documented and reproducible code is not reserved to professional coders !**
+
+:::
+::::
+
+
+# Our today clinical case
+
+## The patient: VEBIS-EHR-VE
+
+:::: {.columns}
+::: {.column width="40%"}
+
+- A codebase dedicated to the production of reports presenting COVID-19 vaccines effectiveness.
+- The code starts from Excel files sent by the study sites
+  -  Extracts the populations characteristics
+  -  Extracts Cox models results
+  -  Computes pooled estimates using meta-analysis regression
+  -  ...
+:::
+
+::: {.column width="60%"}
+::: {.center-items}
+![](external_img/01-VEBISEHRVE.png)
+:::
+
+:::
+::::
+
+## This patient suffers from many conditions:
+
+- **Acute Documentation Deficiency (ADD)**: Code with no context or explanation
+
+<br />
+
+- **Global Variable Syndrome (GVS)**: Variables appearing and changing mysteriously across the environment
+  
+<br />
+
+
+- **Chronic Repetition Disorder (CRD)**: The same calculations copy-pasted across multiple scripts
+
+<br />
+
+- **Hard-Coding Disease (HCD)**: Brittle file paths and parameters embedded throughout the code
+
+<br />
+
+- **Code Hoarding Disorder (CHD)**. It's characterized by the persistent difficulty in discarding or deleting unused code files, despite their lack of current value to the project. It is also called the `analysis_v2_final_FINAL_realFinal_USE_THIS_ONE.R` disease. Frequently co-occuring with **Version Control Avoidance Syndrome (VCAS)** or **I-push-everything-to-the-main-branch-syndrome-YOLO**.
+
+## Risk factors for these diseases:
+
+- Time pressure: "We need these results yesterday!"
+- Code isolation: Each researcher working in separate environments
+- Lack of exposure to coding best practices
+- Lack of confidence with version control with Git
+- Asymptomatic carriers: Code that "works" but harbors hidden bugs
+- PTSD : Prior traumatic experiences of accidentally deleting needed code or reviewer requests requiring resurrection of old analyses
+
+<br />
+
+**Natural History of Disease**
+
+Like many chronic conditions, these problems developed gradually. What began as a simple analysis script mutated into a complex, interdependent system with no clear structure.
+
+We've all been there: "ok I'll do it quick and dirty for this time, but I promise I'll fix it later". But we never fix it.
+
+## What is expected from me on VEBIS-EHR-VE?
+
+Ok this patient is performing quite well at its everyday tasks, but we think it might be able to do better !
+
+![](external_img/02-expected_tasks.png)
+
+**Ok ... so first things to do could be to try to run the last version of the code and see what happens ... !**
+
+_Spoiler: it failed !_
+
+
+## To save you some time, a quick summary of my first days working at Epiconcept
+
+::: {.center-items}
+
+![](external_img/crying.gif){width="70%"}
+
+**"Hi James, can you help me ?"**
+
+Thanks again for your patience James 🙏
+
+:::
+
+# Patient's disease #1
+
+## **Acute Documentation Deficiency (ADD)**
+
+If we jump back to the repo main page: 
+
+![](external_img/01-VEBISEHRVE.png)
+
+The README is empty ! 
+
+The README is the first contact of a user with the code. I would have liked an overview of the project, its purpose, and how to use it, with an example I can copy and paste.
+
+## **Acute Documentation Deficiency (ADD)**
+
+**Update from James !**
+
+The last version of the code is not in the "main" branch of the GitHub repository, but in the "update_v2" branch. 
+
+I would have expected to have the "production" code in to the main branch, but it's another subject !
+
+![](external_img/03-readme_branchV2.png)
+
+The README has not been updated in the last 2 years. Is it still valid ?
+
+
+## **Acute Documentation Deficiency (ADD)**
+
+_"Ok well, James told me that the most important script was `main.R`, I'll take a look at this script !"_
+
+```r
+# Project Name  : VEBIS-EHR-VE
+# Script Name   : main.R
+# Summary       : main script to call all other specific scripts 
+# Date created  : 2022-07-07
+# Author        : EPICONCEPT (M.DIOUF/M.MAUREL/J.HUMPHREYS) & ISCIII (S.MONGE/M.FONTAN-VELA)
+# Date reviewed : 2022 - 11 - 15
+# Reviewed by   : ISCIII (S.MONGE)
+# Modified by   : EPICONCEPT (J.HUMPHREYS)
+# Date modified : 2023-11-06
+
+# Description : 
+# The main.R script file calls all files for the VEBIS-EHR-VE in order to produce an automatized monthly report.
+# 
+# The source data are in the Google shared drives in the folder "1_EPI/0. EPI shared extern. folders/VE - Reports - R markdown/sources data".
+# They are organised by month-year. One file corresponds to the VE estimates for one study site.
+# There is one sheet per outcome, each sheet contains the estimates grouped by the age groups of interest.
+
+
+# set date of report
+#reporting_dates <- list("2024-01-01","2024-02-01","2024-03-01","2024-04-01","2024-05-01","2024-06-01","2024-07-01","2024-08-01","2024-09-01","2024-10-01","2024-11-01","2024-12-01")
+#reporting_dates <- list("2024-03-01","2024-04-01","2024-05-01","2024-06-01", "2024-07-01","2024-08-01","2024-09-01","2024-10-01","2024-11-01","2024-12-01")
+#reporting_dates <- list("2001-04-01")
+
+
+reporting_dates <- list("2025-01-01")
+# set report types (2001 always cumulative)
+if(grepl("2001", reporting_dates[[1]])){
+  required_report_types <- c("cumulative")
+  
+} else {
+  required_report_types <- c("short", "long")
+}
+
+cumulative_period <- ""
+
+for(date in reporting_dates){
+  # START of the script -----------------------------------------------------
+  
+  # 1. Select month of REPORT, by default it is the month before the month of data analysis
+  # Default can be override by manually assigning as reference date, any date in the desired month of report
+  
+  input_date <- as.Date(date)
+  
+  
+  # 2. Include config.R file ---------------------------------------------------
+  # The config.R file loads all the needed libraries, sets the different paths used in the project and
+  # defines global variables to run the VEBIS-EHR-VE project.
+  if (! file.exists("config.R")) {
+    stop("main.R script should be run from root directory")
+  }
+  source("config.R")
+  
+  
+  # 3. (OPTIONAL) Download source data ---------------------------------------------------
+  # The download_estimates.R file downloads all Excels from site-estimates from the Google Drive (source data).
+  # You will need to specify with which account you want to log in into Google Drive
+  # The first time to run it you will need to give all permisions to see & modify files from the Google Drive in a pop-up window
+  #sourceFile("PREPARE", "download_estimates.R")
+
+  # 4. Import VE estimates -----------------------------------------------------
+  # Study sites send their VE results every month in an Excel file.
+  # First source data are archived in "SOURCES"/sites data/country before being renamed as Country_monthmonth.xlsx (for example: Denmark_octnov.xlsx)
+  # in the corresponding month-year folder on the shared Drive.
+  # VE estimates imported are saved in the project's data folder by outcome and by month-year in .rds format.
+  # The output file name is "outcome_month_VEBIS_lot4_age_estimates.rds".
+  # if(input_date == "2001-06-01"){
+  #   sourceFile("PREPARE", "import_estimates_secondary.R")
+  # } else {
+  #   sourceFile("PREPARE", "import_estimates.R")
+  # }
+
+  # 5. Meta-analysis -----------------------------------------------------------
+  # Run the meta-analysis, save table results by outcome and by month-year in Excel format and
+  # generate forest plot by outcome and by age group for each model.
+  # The script uses the mymeta_function.R file for conducting the meta-analysis and drawing forest plots.
+  # Results (Excel file and plots) are saved in the results folder per outcome and month-year.
+  # The Excel file name is "Result_outcome_month.xlsx".
+  #sourceFile("PREPARE", "meta_analysis_fix_random.R")
+
+
+  # 6. Import meta-analysis VE results -----------------------------------------
+  # VE results saved in Excel tables from the meta-analysis for each outcome are imported.
+  # For an outcome, a reporting month/year and a model, 2 files are saved in the data folder: "res_data_model.rds" and "res_descr_data_model.rds".
+  # IMPORTANT: ALL EXCEL FILES TO BE IMPORTED NEED TO BE CLOSED WHEN RUNNING THE SCRIPT
+  #sourceFile("PREPARE", "import_results.R")
+
+
+  # 7. Results report ----------------------------------------------------------
+
+  # 7.1.A Results report (html) ------------------------------------------------
+  # Produce the monthly report with descriptive table, pooled VE trends over time plots and tables,
+  # pooled VE estimates plots and tables per outcome.
+  # Currently set to only produce the 'short' report, though this may now become the main/sole monthly output.
+
+  sourceFile("COMPILE", "EHR_VE_results_report.R")
+}
+
+
+
+# END of the script -------------------------------------------------------
+```
+
+## Autopsy of the `main.R` script
+
+My thought after my first contact with this script :
+
+- Last modified on 2023-11-06
+  
+_Doesn't seem very recent, surprising for an ongoing project_
+
+:::{.center-items}
+
+![](external_img/documentation.jpg){width="30%"}
+  
+:::
+
+- So many commented lines 
+  
+_I don't know if they are useful or not, but I feel like I need to read them all to understand the script (and to read all the scripts that are sourced, and all the scripts that are sourced by these sources scripts ...)._
+
+## My thoughts at that moment
+
+- How would I have be able to work on it if James had left the company and that I was replacing him?
+
+- How James could have been able to work on it all by himself?
+
+- If I got hit by a bus tomorrow, how would the next person be able to work on it?
+
+:::{.center-items}
+
+![](external_img/drowning.jpg){width="50%"}
+  
+:::
+
+
+# Patient's disease #2: **Global Variable Syndrome (GVS)**
+
+## **Global Variable Syndrome (GVS)**
+
+I've understood that `config.R` is also a very important script to set up a reporting project.
+
+A >200 lines script:
+- creating paths to folders of interest to read data and save results
+- setting global parameters used throughout the files
+- 
+
+```r
+# Other global parameters used throughout the files ---------------------------
+
+outcomes <- c(
+  "Hospitalization",
+  "COVID19_Death"
+  )
+
+# Current age groups
+agegroups <- c("65-79", "80")
+
+colnames <- c("estimate_txt", "N", "person_days", "events", 
+              "crude_point", "crude_lower", "crude_upper", 
+              "adj1_point", "adj1_lower", "adj1_upper", 
+              "adj2_point", "adj2_lower", "adj2_upper",
+              "adj3_point", "adj3_lower", "adj3_upper")
+
+# 0. Customize time for the analysis. 
+# The customize_time.R file contains all variables that need to be customized to run the scripts in a selected time frame.
+# It contains default values if the analysis month is the previous to the month running the script. Otherwise, we need to override the default.
+# No further changes need to be done monthly in individual script to adapt it monthly.
+sourceFile("PREPARE", "customize_time.R")
+
+
+# Commented non-submitting countries for testing, remove when all received (except Lux, no longer participating)
+sites <- c("Belgium"
+             ,"Denmark"
+            # "Luxembourg" # No longer submitting data
+             ,"Navarra"
+             ,"Norway"
+             ,"Portugal"
+             ,"Italy"
+            # ,"Netherlands" # After Feb 24 not submitting data
+            ,"Sweden" # Feb 24 only so far
+           )
+
+
+# Liliana added 22/09/2022
+# Create folders if they don't exist based on outcomes and study periods
+folders_to_create <- c(paste(getPath("DATA"),outcomes,sep="/"),
+                       paste(getPath("DATA"),sort(rep(outcomes,length(outcomes))),rep(reporting_month,length(outcomes)),sep="/"),
+                       paste(getPath("RESULTS"),outcomes,sep="/"),
+                       paste(getPath("RESULTS"),sort(rep(outcomes,length(outcomes))),rep(reporting_month,length(outcomes)),sep="/"))
+lapply(folders_to_create,
+       function(x) if(!dir.exists(x)) dir.create(x))
+
+
+# Estimate orders until Nov 23 without reference category for each model
+pos_overall <- c(2,3)
+pos_time <- c(5,7)
+pos_relat <- c(9,11)
+
+# Estimate orders after Nov 23 without reference category for each model :
+pos_model <- list(pos_model3 = c(2,6))
+subtitles <- c(" . VE of seasonal vaccination versus unvaccinated")
+
+if(input_date=="2001-06-01"){
+  pos_model <- list(pos_model3 = c(2,5), pos_model4 = c(7,10), pos_model5 = c(12,15), pos_model6 = c(17,20))
+}
+
+# Reference rows' estimate order
+ref.est.order <- c()
+for(i in 1:length(pos_model)){
+  ref.est.order <- c(ref.est.order, pos_model[[i]][1]-1)
+}
+
+
+# ecdc_color <- rgb(105, 174, 35, maxColorValue = 255)
+
+# Effects type for the meta-analysis
+effect <- c("random"
+            # , "fix"
+            )
+
+
+# De-activate scientific notation
+options(scipen = 999) 
+
+
+TOKEEP <- c("TOKEEP", "reference_date", "input_date", "reporting_month", "last_month", "study_period", "study_period_abr", "study_period_txt", "sites", "colnames",
+            "outcomes", "agegroups", "subtitles", "effect", "reporting_month_plot_over_time", "monthyear", "end_period",
+            "pos_overall", "pos_time", "pos_relat", "pos_model","ref.est.order","study_period_title","required_report_types","cumulative_period")
+```
+
+## **Global Variable Syndrome (GVS)**
+
+`config.R` is sourcing another file called `customize_time.R`, which creates a lot of variables related to the reporting period, which are used EVERYWHERE in the codebase.
+
+Let's find the occurence of the object "reporting_month" (would need 2-3 slides to show them all):
+
+:::: {.columns}
+::: {.column width="60%"}
+![](external_img/04-find_reporting_month.png)
+:::
+::: {.column width="40%"}
+![](external_img/mental-breakdown.gif)
+<br />
+This parameter (among the long list of other global parameters) could be modified elsewhere, could be not. If it is modified : in which scripts ? It's very hard to track.
+:::
+::::
+
+
+
+
+
+# Patient's disease #3
+
+##  **Chronic Repetition Disorder (CRD)**
+
+There are many elements that are repeated many times in the codebase. Concrete example:
+
+In the codebase we are doing some operations if the number of events is below 5.
+
+![](external_img/05-events_below_5_repetitions.png)
+
+Mantra #1: **DRY** (Don't Repeat Yourself) -> "From a copy/paste, write a function".
+
+("From a function, create a package", but it will come later !)
+
+# Patient's disease #4
+
+## **Hard-Coding Disease (HCD)**
+
+Hard-coding is the practice of embedding data directly into the code, rather than obtaining it from external sources or parameters. This disease if often concomitant with the **Global Variable Syndrome (GVS)** and the **Chronic Repetition Disorder (CRD)**.
+
+Remember the `config.R` file? In which we were defining age classes ?
+
+```r
+# Current age groups
+agegroups <- c("65-79", "80")
+```
+
+We don't expect this age groups redefined in the codebase, but it is:
+
+![](external_img/06-age_classes_everywhere.png)
+
+## **Hard-Coding Disease (HCD)**
+
+This example is a direct consequence of another curse: the **Moving Data Fever (MDF)**, in which data format and shape change over time.
+
+Let's look at the way we are reading the Excel files sent by the study sites:
+
+```r
+group <- c("65-79", "80")
+firstline <- 6
+lengthlines <- 5
+distancelines <- 14
+
+for(g in 1:length(groups)) {
+startline <- firstline+((g-1)*distancelines)
+    if(reporting_month=="jan24"|reporting_month=="feb24"|reporting_month=="mar24"){          
+     tmp <- data.frame(readxl::read_excel(
+                       path = "some_file.xlsx",
+                       sheet="Hospitalization",
+                       range = paste0("B", startline, ":N", startline+lengthlines))
+        }
+  #### 
+  if(reporting_month == "another_month") {
+    # use other indices !!
+  }
+} 
+```
+
+# Patient's disease #5
+
+## **Code Hoarding Disorder (CHD)**
+
+- Keep "old" version of a function, because "we never know, it might be useful one day"
+
+![](external_img/08-my_table_trends_long.png){height="75px"}
+
+- Keep "old" scripts, because "I spent 2 days writing it, no way I can put it in the trash"
+
+![](external_img/07-archive.png){height="150px"}
+ 
+
+- Keep "objects" in the code, used nowhere, but kept, because "I don't know if I will need them later" (e.g some objects defined in `config.R`)
+
+Mantra #2: **REMOVE DEAD CODE**
+
+Git is here to help you to keep track of the code evolution. If you need to go back to a previous version, you can do it with Git !
+
+# Conclusion of the clinical case
+
+:::: {.columns}
+
+::: {.column width="50%"}
+
+Developing new features for our codebase is challenging because it has:
+
+- low or now documentation
+- many global variables, hard to track and modify
+- many repetitions of the same code, hard to maintain
+- hard-coded parameters, hard to modify
+- many unused code, hard to understand
+- many scripts, hard to find the right one
+
+:::
+::: {.column width="50%"}
+![](external_img/sheldon.gif)
+:::
+::::
+
+# But ...
+
+With James besides me, I had a plan to try to cure this multi pathologic patient:
+
+![](external_img/meme_muscles.jpg)
+  
+
+# Curing our patient: The R package therapy approach
+
+## The R package therapy approach
+
+My goal was to be able to reproduce the last version report, but within a robust framework, dedicated to control the propagation of the diseases listed before.
+
+The R package therapy approach is a way to structure the codebase, to make it more robust and easier to maintain.
+
+It comes with some "constraints", but it is a good way to make sure that the code is reproducible and that it can be used by other people :
+
+- your code must be organized in a specific way, with function only. Flying scripts are not allowed anymore.
+- you need to document your code, with roxygen2 comments and vignettes
+- you can use Git to manage the code evolution
+- other cool stuffs to be shown after
+
+## For Acute Documentation Deficiency (ADD)
+
+- **Documentation**: Add a README file to explain the project, its purpose, and how to use it. 
+  - Benefit: Future users (and future-you) can quickly understand the project
+  
+- **Function Documentation**: Use roxygen2 to document functions and parameters
+  - Benefit: Clear understanding of function purpose, inputs, and outputs
+  
+- **Vignettes: ** Create vignettes to provide examples and use cases for the package
+  - Benefit: Users can see practical applications of the package
+
+- **NEWS.md**: Keep track of changes and updates to the package
+  - Benefit: Users can see what has changed and when, helping them understand the evolution of the package
+
+::: {.columns}
+
+::: {.column width="50%"}
+<br />
+<br />
+<br />
+<br />
+**The hardest part of the job according to me !**
+
+:::
+
+
+::: {.column width="50%"}
+
+![](external_img/documentation_luigi.jpg)
+
+:::
+
+::::
+
+
+## For Global Variable Syndrome (GVS) and Hard-Coding Disease (HCD)
+
+- **Remove Global Variables**: Move from global variables to function parameters
+  - Benefit: Code behavior becomes predictable and explicit, making it easier to understand and maintain
+  
+For example, instead of using a global variable for the reporting month, pass it as a parameter to functions that need it.
+
+- **Use Parameters Instead of Hardcoding**: Avoid hardcoding values in the codebase
+  - Benefit: Code becomes more flexible and adaptable to different situations
+
+
+:::{.center-items}
+
+![](external_img/spongebob.jpg){width="30%"}
+  
+:::
+
+
+## For Hard-Coding Disease (HCD)
+
+<br />
+
+### REMOVE DEAD CODE
+
+Quite easy and one of my favorite part of the job !
+
+- **Remove Unused Code**: Identify and remove code that is no longer used or needed
+  - Benefit: Cleaner codebase, easier to understand and maintain
+  - Example: Remove old functions, scripts, and objects that are not used in the current codebase
+  - Example: Remove commented-out code that is no longer relevant
+
+:::{.center-items}
+
+![](external_img/leatherface-texas-chainsaw.gif)
+ 
+:::
+
+
+## For Moving Data Fever (MDF)
+
+☎️ James called me some day: 
+
+_"Hey, from now the study sites deliver the data not only in Excel files, but also in RDS files. Could be a good opportunity to work with more consistent data !!"_
+
+(maybe he already told me that before, but sometimes he speaks too fast for me to understand everything)
+
+<br />
+
+- Excel files are human-readable but are really bad at storing data for programmatic use.
+
+- RDS files (a R specific format) are not really human-readable but are a great way to store data  --> **that's what we want !**
+
+
+<br />
+
+### Big decision !
+
+Instead of trying to adapt the existing code to read the new format, I've decided to start from scratch a new codebase to produce the reports.
+
+:::{.center-items}
+
+![](external_img/excited.gif)
+
+:::
+
+# Time to code !
+
+:::{.center-items}
+
+![](external_img/200w.gif){width="30%"}
+
+:::
+
+## After a few weeks of coding ...
+
+:::{.center-items}
+
+![](external_img/09-released.png){}
+
+:::
+
+## Is our patient healthy now ?
+
+Let's take a look at the repo !
+
+<https://epiconcept-paris.github.io/VEBIS-EHR-VE_reborn/>
+
+## Ok the documentation is cool, but what about the code ?
+
+- Every piece of code is now a R function, with unit test to ensure its behaviour is correct (will introduce it in a moment)
+
+- Unused code removed, no more commented-out code
+
+- No more global variables, no more hard-coded parameters, no more flying scripts.
+
+- Our code doesn't contain any hardcoded age classes or other similar hardcoded stratification anymore ! 
+
+**The code automatically adapts to the data, and not the opposite !**
+
+_How did we manage to do that ? With the "metadata" table approach !_
+
+## The "metadata" table approach
+
+The first time we are reading our RDS files, we are processing them to create a "metadata" table, which contains all the information we need to know about the data and we recode the original data according to the metadata table.
+
+![](external_img/10-metadata.png){width="50%"}
+
+## Let's talk a bit about coding method: KISS
+
+Mantra #3: **KISS (Keep It Simple, Stupid)**
+
+We are trying to keep our functions as simple as possible, with a single purpose.
+
+If the task is too complex, we break it down into smaller functions.
+
+Let's take the example of a forest plot, present in a monthly report:
+
+![](external_img/11-forestplot.png){width="50%"}
+
+
+## Let's talk a bit about coding method: KISS
+
+Many tasks have to be realised to produce this plot:
+
+- Read population characteristics data: to get the number of vaccinated / unvaccinated
+- Get models results for each site / Compute pooled results
+- Compute vaccine effectiveness from models results
+- Compute time since vaccination statistics
+- Format the results to be displayed in the plot
+- Create the plot
+- ....
+
+We need to structure our mental model to divide the tasks into smaller tasks:
+
+- The code is easier to read and understand
+- The code is easier to test and debug
+- The code is easier to maintain and evolve
+- The code is easier to reuse in other contexts
+
+**A task -> a function, a function -> a task**
+
+## When a function is simple you can write unit tests !
+
+**What the hell are unit tests ?**
+
+Unit tests can be seen as a way to check that the code is doing what it is supposed to do:
+
+- Does my code returns the expected output ?
+- Does my code returns the expected error ?
+- Does my code returns the expected message ?
+
+Let's get back to the forest plot example:
+
+- We need to compute the time since vaccination statistics (median, IQR) in several groups (age classes, study sites, vaccination groups). 
+
+- We write a R code to do that:
+
+```r
+compute_time_since_vaccination_statistics <- function(data, some_groups) {
+  # R code to do the job
+  # ...
+}
+```
+
+
+## How to test my function ?
+
+- Once my R code is written, I can prepare synthetic data, i.e a data frame in which I will have fake TSV data, some groups (e.g age classes, study sites)
+
+- I run my function on this synthetic data, and I check that the output is what I expect.
+
+<br />
+
+
+:::: {.columns}
+::: {.column width="50%"}
+
+**Writing unit tests consists in writing expectations**
+
+- In R we use `expect_xxx()` functions:
+  - `expect_equal()` to check that the output is equal to the expected output
+  - `expect_error()` to check that the function returns an error when it is supposed to (e.g the input data are empty)
+  - `expect_message()` to check that the function returns a message when it is supposed to (e.g when the calculations are finished)
+  - ...
+:::
+
+::: {.column width="50%"}
+::: {.center-items}
+
+![](external_img/unit_tests.jpg){width="50%"}
+:::
+:::
+::::
+
+
+<br />
+
+**This seems stupid, but being sure that your code does the job it is supposed to do is a great mental relief !**
+
+
+
+## Unit tests as an epidemiologic surveillance system
+
+Unit tests are good monitors of the quality of your code when you write it. 
+
+But it also acts as a surveillance system, to detect problems early, understand their causes, and prevent widespread impact.
+
+Unit tests, will systematically monitor for bugs, regressions, and other issues that may arise as the codebase evolves !
+
+<br />
+
+**You won't be scared anymore of breaking something when implementing a new feature in your code or introducing a new bug when you are trying to fix an old one!**
+
+::: {.center-items}
+![](external_img/scrat.gif)
+:::
+
+
+## Unit tests save your life !
+
+Didn't happen so far, but could have:
+
+- Some day, Baltazar is calling me. He finds it takes too much time to run a complete report. 😠
+- "Ok boss, I'll try to optimize it"  🚀
+- I switch some data wrangling operations made with the R package `dplyr` to the R package `data.table`, which is faster for large data sets. 🖥️
+- I run my report code again. The results have changed 😱
+- Could come from the cleaning RDS file process, the meta analysis results, the function producing the tables ... it will require a lot of time to investigate ! 🤓
+
+<br />
+<br />
+
+**Good news:** I have written unit tests for all my functions, so I can run them to check that the output is still the same as before.
+
+- Some test is failing, I can check the code and understand what is wrong.
+- It seems that the `data.table` package is not doing the same thing as the `dplyr` package for this specific operation. I can fix it and run the tests again to check that everything is working as expected !
+- I am relieved, I can go back to my boss and tell him that the report is ready ! 🍾
+
+## Unit tests as a shield against crazy AI code
+
+I am a Github Copilot user (don't tell anyone it's a secret 🤫). I love it, it helps me a lot to write code faster.
+
+Sometimes this kind of tool produces code that is, at best, delirious ! Good for me, I have written many unit tests to ensure that Copilot suggestions won't break my codebase !
+
+:::: {.columns}
+::: {.column width="50%"}
+
+::: {.center-items}
+![](external_img/14-copilot.png){width="100%"}
+:::
+:::
+
+::: {.column width="50%"}
+What Copilot did to my code:
+
+- create a genetic `append_db()` function, able to write new data in any new database
+  
+- modify my `append_metadata_db()` and `append_ve_db()` functions to use the new `append_db()` function
+
+I've read the code Copilot produced, I don't see any obvious error. **But how can I know I won't break anything by following this suggestion ?** 
+
+Good for me I've already written unit tests to check the outputs of  `append_metadata_db()` and `append_ve_db()` !
+
+I run the tests, and I see that the outputs of these functions are the same as before 😎
+
+:::
+::::
+
+## Our usage of Git
+
+The Github repository contains "branches", which are copies of the codebase.
+
+- the `main` branch is the production branch, which contains the code that is used to produce the reports. The code in this branch must be stable and tested.
+
+- the `dev` branch is the development branch, which contains the code that is being developed.
+
+- specific features development or bug fixes are done in specific branches, which are created from the `dev` branch. Once the feature is finished, it is merged into the `dev` branch.
+  
+- from times to times, the `dev` branch is merged into the `main` branch, to update the production code. The version number of the package is incremented at this time and a "release" is published (we save a copy of the codebase for a given version number).
+
+::: {.center-items}
+
+![](external_img/git_workflow.png){width="50%"}
+:::
+
+
+
+## Our usage of Git
+
+Features requests, bug reports, and other tasks are managed with GitHub issues.
+
+No more random Google Chat messages or emails to track the tasks to be done.
+
+In a dev perspective, it helps to keep track of the tasks to be done, of the decisions we take, and to prioritize the work.
+
+::: {.center-items}
+
+![](external_img/12-gh_issues.png){width="100%"}
+:::
+
+# The past, the present and the future !
+
+## The past and the present
+
+::: {.center-items}
+
+![](external_img/13-before_now.png){width="100%"}
+:::
+
+_**If I got hit by a bus tomorrow, would the next person be able to work on it?**_
+
+I hope so ! At least I hope it won't be too painful !
+
+## The future
+
+What we are hoping for the next months:
+
+- Historical data stored in a database, with a stable format over time, so we could compare the results over time and between sites
+
+- Automated data quality reports generated from the study sites so they can control their data before sending it to us
+
+- Automated data retrieval when uploaded by the sites
+
+- Continuously documented and tested code to ensure its maintainability
+
+- Improving the codebase used by the study sites to produce the results used in the reports
+
+- Good practices adopted by as much members of the team as possible
+
+:::{.center-items}
+![](external_img/biden.gif){width="25%"}
+:::
+
+
+# Conclusion
+
+## The Journey: Small Steps, Big Impact
+
+- **Documentation**: Start with simple function documentation instead of writing comments in the code
+  - The future-you and others understand code purpose
+
+- **Functions**: Moving from script mode to function mode
+  - Easier testing, debugging, and maintenance
+
+- **Removing Global Variables**: The path to reproducibility
+  - Code behavior becomes predictable and explicit
+
+- **Addressing Hardcoded Elements**: Making code flexible
+  - Code works across environments and for different analyses
+
+
+### The Practical Benefits
+
+- **Time savings**: "I spent 3 hours setting up the package, but saved 20+ hours in the following month"
+- **Reproducibility**: "We can now regenerate results from 6 months ago in minutes"
+- **Collaboration**: "New team members can contribute meaningful code in days rather than weeks"
+- **Reduced errors**: "We caught a critical calculation error thanks to our tests"
+
+<br />
+
+**Less time spent in doing repetitive / annoying / stupid tasks is more time spent in doing fun stuff !**
+
+
+## You can do it !
+
+- **Be indulgent with yourself**: We all have different levels of experience and time constraints
+
+- **Resist to "the quick and dirty today, clean tomorrow" tentation**: We all know we never come back to clean our mess later
+
+- **Make it incremental**: You don't need to do everything at once
+
+- **Start with one function**: Pick a function you use often and document it
+
+- **Packages are for everyone**: You don't need to be a software engineer to create a package. A package can be a simple collection of functions that you use often.
+
+
+::: {.center-items}
+![](external_img/baby.jpg){width="50%"}
+:::
+
+
+## Need some help ?
+
+::: {.center-items}
+![](external_img/dog.jpg){width="50%"}
+:::
+
+_PS: This presentation has been made with a reproducible workflow using R and quarto. Wants to know more ? Good news ! It's on Github !_
